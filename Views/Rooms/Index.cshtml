@@ -1,0 +1,21 @@
+@model IEnumerable<BoardingHouseApp.Models.Room>
+@{
+    ViewData["Title"] = "Danh sách phòng";
+}
+<h2>Danh sách phòng</h2>
+<p><a class="btn btn-primary" href="/Rooms/Create">Thêm phòng</a></p>
+<table class="table">
+  <thead>
+    <tr><th>Mã phòng</th><th>Giá thuê</th><th>Diện tích</th></tr>
+  </thead>
+  <tbody>
+  @foreach (var r in Model)
+  {
+    <tr>
+      <td>@r.RoomNo</td>
+      <td>@r.RentPrice</td>
+      <td>@r.Area m²</td>
+    </tr>
+  }
+  </tbody>
+</table>

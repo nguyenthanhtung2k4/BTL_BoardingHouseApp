@@ -1,0 +1,24 @@
+@model BoardingHouseApp.Models.Room
+@{
+    ViewData["Title"] = "Thêm phòng";
+}
+<h2>Thêm phòng</h2>
+<form asp-action="Create" method="post">
+  <div class="mb-3">
+    <label class="form-label">Mã phòng</label>
+    <input asp-for="RoomNo" class="form-control" />
+    <span asp-validation-for="RoomNo" class="text-danger"></span>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Giá thuê</label>
+    <input asp-for="RentPrice" class="form-control" />
+    <span asp-validation-for="RentPrice" class="text-danger"></span>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Diện tích (m²)</label>
+    <input asp-for="Area" class="form-control" />
+    <span asp-validation-for="Area" class="text-danger"></span>
+  </div>
+  <button type="submit" class="btn btn-success">Lưu</button>
+  <a class="btn btn-secondary" href="/Rooms">Quay lại</a>
+</form>

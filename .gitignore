@@ -1,0 +1,62 @@
+# Tệp tin và thư mục được sinh ra bởi Visual Studio và .NET
+############################################################
+
+## Thư mục Build và Artifacts
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+[Aa]rm64/
+[Aa]rm/
+[Xx]64/
+[Xx]86/
+
+## Thư mục Tệp tin tạm thời và Logs
+**/log/
+**/logs/
+*.log
+*.bak
+*.tmp
+*.vs/
+*.[Ss]ervices/
+[Tt]emp/
+
+## Các loại tệp cấu hình và người dùng
+# Tệp cấu hình người dùng cho Visual Studio
+*.suo
+*.user
+*.useros
+
+# Tệp dự án và giải pháp được sinh ra
+*.pdb
+*.pidb
+*.v1[0-9].*
+*.vshost.*
+*.csproj.user
+*.resharper
+*.dotSettings
+
+## Tệp NuGet
+# Thư mục NuGet gói nếu không sử dụng PackageReference
+[Pp]ackages/
+# Lưu trữ HTTP NuGet
+.nuget/packages/
+
+# Thư mục đã được khôi phục bởi Paket
+.paket/restore/
+
+## MacOS
+# Thư mục resource fork
+.DS_Store
+
+## Linux
+*~
+
+## Tệp Bí mật (Quan trọng: Không bao giờ đẩy tệp chứa thông tin nhạy cảm)
+# Nếu bạn sử dụng tệp bí mật, hãy thêm vào đây
+# Ví dụ: appsettings.Development.json (nếu chứa thông tin nhạy cảm)
+# appsettings.Development.json
+# *.pubxml.user
+
+# Tùy chọn: Nếu bạn sử dụng Visual Studio Code
+.vscode/
