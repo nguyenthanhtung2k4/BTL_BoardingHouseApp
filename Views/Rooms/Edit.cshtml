@@ -1,12 +1,13 @@
 ﻿@model BoardingHouseApp.Models.Room
 
 @{
-    ViewData["Title"] = "Thêm phòng mới";
+    ViewData["Title"] = "Sửa thông tin phòng";
 }
 
-<h2>Thêm phòng mới</h2>
+<h2>Sửa thông tin phòng</h2>
 
-<form asp-action="Create" method="post">
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="RoomId" />
     <div class="form-group">
         <label>Số phòng</label>
         <input asp-for="RoomNumber" class="form-control" />
@@ -21,6 +22,6 @@
         <input asp-for="IsAvailable" class="form-check-input" />
         <label class="form-check-label">Phòng còn trống?</label>
     </div>
-    <button type="submit" class="btn btn-success">Lưu</button>
+    <button type="submit" class="btn btn-success">Cập nhật</button>
     <a asp-action="Index" class="btn btn-secondary">Hủy</a>
 </form>
