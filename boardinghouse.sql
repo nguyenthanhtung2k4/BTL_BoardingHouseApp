@@ -35,8 +35,7 @@ CREATE TABLE Contracts (
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     status VARCHAR(20) NOT NULL CHECK (status IN ('hoạt động', 'hết hạn', 'chấm dứt')),
-    created_at DATETIME DEFAULT GETDATE(),
-    updated_at DATETIME DEFAULT GETDATE(),
+    created_at DATETIME DEFAULT GETDATE(),    updated_at DATETIME DEFAULT GETDATE(),
 
     CONSTRAINT FK_Contracts_Tenants FOREIGN KEY (tenant_id) REFERENCES Tenants(id),
     CONSTRAINT FK_Contracts_Rooms FOREIGN KEY (room_id) REFERENCES Rooms(id),
