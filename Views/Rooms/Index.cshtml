@@ -27,7 +27,7 @@
                 <td>@item.RoomId</td>
                 <td>@item.RoomNumber</td>
                 <td>@item.Price.ToString("N0") VNĐ</td>
-                <td>@(item.IsAvailable ? "Trống" : "Đã thuê")</td>
+                @* <td>@(item. ? "Trống" : "Đã thuê")</td> *@
                 <td>
                     <a asp-action="Edit" asp-route-id="@item.RoomId" class="btn btn-sm btn-warning">Sửa</a>
                     <a asp-action="Delete" asp-route-id="@item.RoomId" class="btn btn-sm btn-danger">Xóa</a>

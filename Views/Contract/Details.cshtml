@@ -1,0 +1,68 @@
+﻿@model BoardingHouseApp.Models.Contracts
+
+@{
+    ViewData["Title"] = "Chi Tiết Hợp Đồng";
+}
+
+<h1>Chi Tiết Hợp Đồng</h1>
+
+<div>
+    <h4>Hợp đồng số: @Model.Id</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-3">
+            Người Thuê:
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Tenant.FullName)
+        </dd>
+        <dt class="col-sm-3">
+            Phòng:
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Room.RoomNumber)
+        </dd>
+        <dt class="col-sm-3">
+            Ngày Bắt Đầu:
+        </dt>
+        <dd class="col-sm-9">
+            @Model.StartDate.ToString("dd/MM/yyyy")
+        </dd>
+        <dt class="col-sm-3">
+            Ngày Kết Thúc:
+        </dt>
+        <dd class="col-sm-9">
+            @Model.EndDate.ToString("dd/MM/yyyy")
+        </dd>
+        <dt class="col-sm-3">
+            Ngày Tạo:
+        </dt>
+        <dd class="col-sm-9">
+            @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+        </dd>
+        <dt class="col-sm-3">
+            Cập Nhật Cuối:
+        </dt>
+        <dd class="col-sm-9">
+            @Model.UpdatedAt.ToString("dd/MM/yyyy HH:mm")
+        </dd>
+    </dl>
+
+    @* Có thể thêm phần hiển thị danh sách Payments ở đây *@
+    @if (Model.Payments != null && Model.Payments.Any())
+    {
+        <h5>Lịch sử Thanh toán:</h5>
+        <ul class="list-group mb-3">
+            @foreach (var payment in Model.Payments.OrderByDescending(p => p.CreatedAt))
+            {
+                <li class="list-group-item">
+                    Thanh toán @payment.Amount.ToString("N0") VNĐ vào ngày @payment.CreatedAt.ToString("dd/MM/yyyy")
+                </li>
+            }
+        </ul>
+    }
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Sửa</a> |
+    <a asp-action="Index" class="btn btn-secondary">Quay lại Danh sách</a>
+</div>

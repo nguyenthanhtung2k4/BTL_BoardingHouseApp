@@ -20,3 +20,5 @@ namespace BoardingHouseApp.Models
         public DateTime UpdatedAt { get; set; }
     }
 }
+
+

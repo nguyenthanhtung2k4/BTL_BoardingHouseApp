@@ -27,7 +27,7 @@
                 <td>@t.FullName</td>
                 <td>@t.Phone</td>
                 <td>@t.Email</td>
-                <td>@t.Room?.RoomNumber</td>
+                @* <td>@t.Rom?.RoomNumber</td> *@
                 <td class="text-end">
                     <a asp-action="Edit" asp-route-id="@t.TenantId" class="btn btn-sm btn-outline-secondary">Sửa</a>
                     <a asp-action="Delete" asp-route-id="@t.TenantId" class="btn btn-sm btn-outline-danger ms-1">Xóa</a>
