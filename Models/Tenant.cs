@@ -10,20 +10,13 @@ namespace BoardingHouseApp.Models
 
         [Required, StringLength(100)]
         public string FullName { get; set; } = string.Empty;
-
-        [Required, StringLength(10, ErrorMessage = "Số điện thoại tối đa 10 ký tự.")]
-    
         public string Phone { get; set; } = string.Empty;
 
         [EmailAddress]
         public string? Email { get; set; } 
 
-        [Required(ErrorMessage = "Vui lòng chọn phòng.")]
-        public int RoomId { get; set; }
+        public DateTime CreatedAt { get; set; }
 
-        [ForeignKey(nameof(RoomId))]
-        public Room? Room { get; set; }
-
-        public Contract? Contract { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 }
