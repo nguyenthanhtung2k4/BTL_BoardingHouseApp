@@ -7,21 +7,19 @@ namespace BoardingHouseApp.Models
     public class Payment
     {
         [Key]
-        public int PaymentId { get; set; }
+        public int Id { get; set; }
 
         [Required]
         public DateTime PaymentDate { get; set; }
 
         [Required]
+        public string? PaymentMethod { get; set; }  // tiền mặt, chuyển khoản...
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        [Required]
         public double Amount { get; set; }
 
-        [Required]
-        public string Method { get; set; }  // tiền mặt, chuyển khoản...
-
-        // FK đến Contract
-        public int ContractId { get; set; }
-
         [ForeignKey("ContractId")]
-        public Contract Contract { get; set; }
+        public Contract? ContractId { get; set; }
     }
 }

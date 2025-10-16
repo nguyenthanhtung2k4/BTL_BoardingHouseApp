@@ -13,9 +13,8 @@ namespace BoardingHouseApp.Models
         [Required]
         public double Price { get; set; }
 
-        public bool IsAvailable { get; set; } = true;
+        public DateTime CreatedAt { get; set; }
 
-        // Quan hệ 1-n với Tenant
-        public ICollection<Tenant>? Tenants { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 }
