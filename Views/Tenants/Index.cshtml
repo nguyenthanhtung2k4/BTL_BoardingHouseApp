@@ -1,0 +1,39 @@
+@model IEnumerable<BoardingHouseApp.Models.Tenant>
+@{
+    ViewData["Title"] = "Danh sách người thuê";
+}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="m-0">Người thuê</h2>
+        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Thêm người thuê</a>
+    </div>
+
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Mã</th>
+                <th>Họ tên</th>
+                <th>Điện thoại</th>
+                <th>Email</th>
+                <th>Phòng</th>
+                <th class="text-end">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var t in Model)
+        {
+            <tr>
+                <td>@t.TenantId</td>
+                <td>@t.FullName</td>
+                <td>@t.Phone</td>
+                <td>@t.Email</td>
+                <td>@t.Room?.RoomNumber</td>
+                <td class="text-end">
+                    <a asp-action="Edit" asp-route-id="@t.TenantId" class="btn btn-sm btn-outline-secondary">Sửa</a>
+                    <a asp-action="Delete" asp-route-id="@t.TenantId" class="btn btn-sm btn-outline-danger ms-1">Xóa</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
