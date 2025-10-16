@@ -1,32 +1,29 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using BoardingHouseApp.Models;
-using System.Diagnostics.Contracts;
 
 namespace BoardingHouseApp.Models
-
 {
     public class Tenant
     {
         [Key]
         public int TenantId { get; set; }
 
-        [Required]
-        public string FullName { get; set; }
+        [Required, StringLength(100)]
+        public string FullName { get; set; } = string.Empty;
 
-        [Required, Phone]
-        public string Phone { get; set; }
+        [Required, StringLength(10, ErrorMessage = "Số điện thoại tối đa 10 ký tự.")]
+    
+        public string Phone { get; set; } = string.Empty;
 
         [EmailAddress]
-        public string Email { get; set; }
+        public string? Email { get; set; } 
 
-        // FK đến Room
+        [Required(ErrorMessage = "Vui lòng chọn phòng.")]
         public int RoomId { get; set; }
 
-        [ForeignKey("RoomId")]
-        public Room Room { get; set; }
+        [ForeignKey(nameof(RoomId))]
+        public Room? Room { get; set; }
 
-        // Quan hệ 1-1 với Contract
         public Contract? Contract { get; set; }
     }
 }
