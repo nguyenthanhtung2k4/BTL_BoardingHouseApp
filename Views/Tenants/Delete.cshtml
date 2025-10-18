@@ -1,11 +1,11 @@
-@model  BoardingHouseApp.Models.Tenant
+@model BoardingHouseApp.Models.Tenant
 @{
     ViewData["Title"] = "Xóa người thuê";
 }
 <div class="container py-4">
     <h2>Xóa người thuê</h2>
     <div class="alert alert-warning mt-3">
-        Bạn có chắc muốn xóa người thuê <strong>@Model.FullName</strong> (phòng @Model.Room?.RoomNumber)?
+        Bạn có chắc muốn xóa người thuê <strong>@Model.FullName</strong> không?
     </div>
     <form asp-action="Delete" method="post">
         <input type="hidden" asp-for="TenantId" />

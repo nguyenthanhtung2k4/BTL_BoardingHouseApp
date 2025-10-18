@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using BoardingHouseApp.Data;
 using BoardingHouseApp.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace BoardingHouseApp.Controllers
 {
@@ -14,26 +14,30 @@ namespace BoardingHouseApp.Controllers
             _context = context;
         }
 
-        // GET: Room
+        // GET: /Rooms
         public async Task<IActionResult> Index()
         {
-            var rooms = await _context.Rooms.ToListAsync();
+            var rooms = await _context.Rooms
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
             return View(rooms);
         }
 
-        // GET: Room/Create
+        // GET: /Rooms/Create
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Room/Create
+        // POST: /Rooms/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Room room)
+        public async Task<IActionResult> Create([Bind("RoomNumber,Price")] Room room)
         {
             if (ModelState.IsValid)
             {
+                room.CreatedAt = DateTime.Now;
+                room.UpdatedAt = DateTime.Now;
                 _context.Add(room);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -41,34 +45,35 @@ namespace BoardingHouseApp.Controllers
             return View(room);
         }
 
-        // GET: Room/Edit/5
+        // GET: /Rooms/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-                return NotFound();
-
+            if (id == null) return NotFound();
             var room = await _context.Rooms.FindAsync(id);
-            if (room == null)
-                return NotFound();
-
+            if (room == null) return NotFound();
             return View(room);
         }
 
-        // POST: Room/Edit/5
+        // POST: /Rooms/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Room room)
+        public async Task<IActionResult> Edit(int id, [Bind("RoomId,RoomNumber,Price")] Room room)
         {
-            if (id != room.RoomId)
-                return NotFound();
+            if (id != room.RoomId) return NotFound();
 
             if (ModelState.IsValid)
             {
                 try
                 {
-                    _context.Update(room);
+                    var existingRoom = await _context.Rooms.FindAsync(id);
+                    if (existingRoom == null) return NotFound();
+
+                    existingRoom.RoomNumber = room.RoomNumber;
+                    existingRoom.Price = room.Price;
+                    existingRoom.UpdatedAt = DateTime.Now;
+
+                    _context.Update(existingRoom);
                     await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(Index));
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -77,26 +82,21 @@ namespace BoardingHouseApp.Controllers
                     else
                         throw;
                 }
+                return RedirectToAction(nameof(Index));
             }
             return View(room);
         }
 
-        // GET: Room/Delete/5
+        // GET: /Rooms/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-                return NotFound();
-
-            var room = await _context.Rooms
-                .FirstOrDefaultAsync(m => m.RoomId == id);
-
-            if (room == null)
-                return NotFound();
-
+            if (id == null) return NotFound();
+            var room = await _context.Rooms.FirstOrDefaultAsync(r => r.RoomId == id);
+            if (room == null) return NotFound();
             return View(room);
         }
 
-        // POST: Room/Delete/5
+        // POST: /Rooms/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

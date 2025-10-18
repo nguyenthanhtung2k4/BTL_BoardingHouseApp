@@ -1,10 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using BoardingHouseApp.Data;
 using BoardingHouseApp.Models;
-using System.Threading.Tasks;
-using System.Linq;
 
 namespace BoardingHouseApp.Controllers
 {
@@ -21,30 +18,31 @@ namespace BoardingHouseApp.Controllers
         public async Task<IActionResult> Index()
         {
             var tenants = await _context.Tenants
-                .Include(t => t.TenantId)
+                .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
             return View(tenants);
         }
 
         // GET: /Tenants/Create
-        public async Task<IActionResult> Create()
+        public IActionResult Create()
         {
-            await PrepareRoomsDropDown();
             return View();
         }
 
         // POST: /Tenants/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("TenantId,FullName,Phone,Email,RoomId")] Tenant tenant)
+        public async Task<IActionResult> Create([Bind("FullName,Phone,Email")] Tenant tenant)
         {
             if (ModelState.IsValid)
             {
+                tenant.CreatedAt = DateTime.Now;
+                tenant.UpdatedAt = DateTime.Now;
+
                 _context.Add(tenant);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            await PrepareRoomsDropDown(tenant.TenantId);
             return View(tenant);
         }
 
@@ -54,14 +52,13 @@ namespace BoardingHouseApp.Controllers
             if (id == null) return NotFound();
             var tenant = await _context.Tenants.FindAsync(id);
             if (tenant == null) return NotFound();
-            await PrepareRoomsDropDown(tenant.TenantId);
             return View(tenant);
         }
 
         // POST: /Tenants/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("TenantId,FullName,Phone,Email,RoomId")] Tenant tenant)
+        public async Task<IActionResult> Edit(int id, [Bind("TenantId,FullName,Phone,Email")] Tenant tenant)
         {
             if (id != tenant.TenantId) return NotFound();
 
@@ -69,17 +66,26 @@ namespace BoardingHouseApp.Controllers
             {
                 try
                 {
-                    _context.Update(tenant);
+                    var existingTenant = await _context.Tenants.FindAsync(id);
+                    if (existingTenant == null) return NotFound();
+
+                    existingTenant.FullName = tenant.FullName;
+                    existingTenant.Phone = tenant.Phone;
+                    existingTenant.Email = tenant.Email;
+                    existingTenant.UpdatedAt = DateTime.Now;
+
+                    _context.Update(existingTenant);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!TenantExists(tenant.TenantId)) return NotFound();
-                    else throw;
+                    if (!_context.Tenants.Any(e => e.TenantId == tenant.TenantId))
+                        return NotFound();
+                    else
+                        throw;
                 }
                 return RedirectToAction(nameof(Index));
             }
-            await PrepareRoomsDropDown(tenant.TenantId);
             return View(tenant);
         }
 
@@ -87,9 +93,7 @@ namespace BoardingHouseApp.Controllers
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
-            var tenant = await _context.Tenants
-                .Include(t => t.TenantId)
-                .FirstOrDefaultAsync(m => m.TenantId == id);
+            var tenant = await _context.Tenants.FirstOrDefaultAsync(m => m.TenantId == id);
             if (tenant == null) return NotFound();
             return View(tenant);
         }
@@ -106,17 +110,6 @@ namespace BoardingHouseApp.Controllers
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool TenantExists(int id) =>
-            _context.Tenants.Any(e => e.TenantId == id);
-
-        private async Task PrepareRoomsDropDown(int? selectedRoomId = null)
-        {
-            var rooms = await _context.Rooms
-                .Select(r => new { r.RoomId, Display = r.RoomNumber })
-                .ToListAsync();
-            ViewData["RoomId"] = new SelectList(rooms, "RoomId", "Display", selectedRoomId);
         }
     }
 }

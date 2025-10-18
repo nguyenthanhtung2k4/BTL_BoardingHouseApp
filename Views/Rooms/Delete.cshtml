@@ -1,23 +1,24 @@
 ﻿@model BoardingHouseApp.Models.Room
-
 @{
     ViewData["Title"] = "Xóa phòng";
 }
+<div class="container py-4">
+    <h2>Xóa phòng</h2>
+    <div class="alert alert-warning mt-3">
+        Bạn có chắc muốn xóa phòng <strong>@Model.RoomNumber</strong> không?
+    </div>
 
-<h2>Xóa phòng</h2>
-
-<div>
-    <h4>Bạn có chắc muốn xóa phòng <strong>@Model.RoomNumber</strong> không?</h4>
     <dl class="row">
-        <dt class="col-sm-2">Giá</dt>
-        <dd class="col-sm-10">@Model.Price.ToString("N0") VNĐ</dd>
-        <dt class="col-sm-2">Trạng thái</dt>
-        <dd class="col-sm-10">@((Model.IsAvailable) ? "Trống" : "Đã thuê")</dd>
+        <dt class="col-sm-3">Số phòng</dt>
+        <dd class="col-sm-9">@Model.RoomNumber</dd>
+
+        <dt class="col-sm-3">Giá thuê</dt>
+        <dd class="col-sm-9">@Model.Price.ToString("N0") đ</dd>
     </dl>
 
-    <form asp-action="Delete">
+    <form asp-action="Delete" method="post">
         <input type="hidden" asp-for="RoomId" />
         <button type="submit" class="btn btn-danger">Xóa</button>
-        <a asp-action="Index" class="btn btn-secondary">Hủy</a>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Hủy</a>
     </form>
 </div>
