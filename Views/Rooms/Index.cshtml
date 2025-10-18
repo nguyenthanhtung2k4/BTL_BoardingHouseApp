@@ -37,3 +37,98 @@
         </tbody>
     </table>
 </div>
+<h2>Danh sách phòng</h2>
+
+@if (User.IsInRole("Admin"))
+{
+    <p>
+        <a asp-action="Create" class="btn btn-primary">+ Thêm phòng mới</a>
+    </p>
+}
+else
+{
+    <p>
+        <a href="#" class="btn btn-primary" id="fakeCreateButton">+ Thêm phòng mới</a>
+    </p>
+}
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Mã phòng</th>
+            <th>Số phòng</th>
+            <th>Giá</th>
+            <th>Thao tác</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.RoomId</td>
+                <td>@item.RoomNumber</td>
+                <td>@item.Price.ToString("N0") VNĐ</td>
+                <td>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a asp-action="Edit" asp-route-id="@item.RoomId" class="btn btn-sm btn-warning">Sửa</a>
+                        <a asp-action="Delete" asp-route-id="@item.RoomId" class="btn btn-sm btn-danger">Xóa</a>
+                    }
+                    else
+                    {
+                        <a href="#" class="btn btn-sm btn-warning fakeEditButton" data-roomid="@item.RoomId">Sửa</a>
+                        <a href="#" class="btn btn-sm btn-danger fakeDeleteButton" data-roomid="@item.RoomId">Xóa</a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Thêm một thẻ div để hiển thị thông báo -->
+<div id="notification" style="display: none; position: fixed; top: 20px; right: 20px; z-index: 1050;" class="alert alert-warning alert-dismissible fade show" role="alert">
+    <strong>Thông báo:</strong> Bạn không có quyền thực hiện chức năng này.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Xử lý nút "Thêm phòng mới" giả
+            const fakeCreateButton = document.getElementById('fakeCreateButton');
+            if (fakeCreateButton) {
+                fakeCreateButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showNotification();
+                });
+            }
+
+            // Xử lý các nút "Sửa" giả
+            const fakeEditButtons = document.querySelectorAll('.fakeEditButton');
+            fakeEditButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showNotification();
+                });
+            });
+
+            // Xử lý các nút "Xóa" giả
+            const fakeDeleteButtons = document.querySelectorAll('.fakeDeleteButton');
+            fakeDeleteButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showNotification();
+                });
+            });
+
+            function showNotification() {
+                const notification = document.getElementById('notification');
+                notification.style.display = 'block';
+                // Tự động ẩn sau 5 giây
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 5000);
+            }
+        });
+    </script>
+}

@@ -20,6 +20,7 @@ namespace BoardingHouseApp.Models
         public double Amount { get; set; }
 
         [ForeignKey("ContractId")]
-        public Contracts? ContractId { get; set; }
+        public int ContractId { get; set; }
+        public Contract? Contract { get; set; }
     }
 }
