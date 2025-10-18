@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace BoardingHouseApp.Controllers
 {
+    [Authorize]
     public class RoomsController : Controller
     {
         private readonly AppDbContext _context;

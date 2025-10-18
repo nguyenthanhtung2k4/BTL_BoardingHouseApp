@@ -1,17 +1,19 @@
 ﻿using BoardingHouseApp.Data;
 using BoardingHouseApp.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace BoardingHouseApp.Controllers
 {
+    [Authorize]
     public class ContractController : Controller
     {
         private readonly AppDbContext _context;
         public ContractController(AppDbContext context)
         {
-        _context = context;
+            _context = context;
 
         }
 

@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BoardingHouseApp.Data;
 using BoardingHouseApp.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BoardingHouseApp.Controllers
 {
+    [Authorize]
     public class TenantsController : Controller
     {
         private readonly AppDbContext _context;
