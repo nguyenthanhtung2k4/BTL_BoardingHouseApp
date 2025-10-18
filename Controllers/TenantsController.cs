@@ -20,10 +20,7 @@ namespace BoardingHouseApp.Controllers
         // GET: /Tenants
         public async Task<IActionResult> Index()
         {
-            var tenants = await _context.Tenants
-                .Include(t => t.Room)
-                .ToListAsync();
-            return View(tenants);
+            return View();
         }
 
         // GET: /Tenants/Create
@@ -44,7 +41,6 @@ namespace BoardingHouseApp.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            await PrepareRoomsDropDown(tenant.RoomId);
             return View(tenant);
         }
 
@@ -54,7 +50,6 @@ namespace BoardingHouseApp.Controllers
             if (id == null) return NotFound();
             var tenant = await _context.Tenants.FindAsync(id);
             if (tenant == null) return NotFound();
-            await PrepareRoomsDropDown(tenant.RoomId);
             return View(tenant);
         }
 
@@ -79,19 +74,13 @@ namespace BoardingHouseApp.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            await PrepareRoomsDropDown(tenant.RoomId);
             return View(tenant);
         }
 
         // GET: /Tenants/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null) return NotFound();
-            var tenant = await _context.Tenants
-                .Include(t => t.Room)
-                .FirstOrDefaultAsync(m => m.TenantId == id);
-            if (tenant == null) return NotFound();
-            return View(tenant);
+            return View();
         }
 
         // POST: /Tenants/Delete/5

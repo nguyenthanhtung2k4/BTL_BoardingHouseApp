@@ -2,6 +2,7 @@
 using BoardingHouseApp.Data;
 using BoardingHouseApp.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BoardingHouseApp.Controllers
 {
@@ -22,8 +23,14 @@ namespace BoardingHouseApp.Controllers
         }
 
         // GET: Room/Create
+        [HttpGet]
         public IActionResult Create()
         {
+            if (!User.IsInRole("Admin"))
+            {
+                TempData["ErrorMessage"] = "Bạn không có quyền truy cập chức năng này.";
+                return RedirectToAction(nameof(Index));
+            }
             return View();
         }
 

@@ -16,10 +16,10 @@ namespace BoardingHouseApp.Models
         public DateTime updateAt{ get; set; }
 
         public int TenantId { get; set; }
-
         [ForeignKey("TenantId")]
         public Tenant Tenant { get; set; }
 
+        public int RoomId { get; set; }
         [ForeignKey("RoomId")]
         public Room Room { get; set; }
 
