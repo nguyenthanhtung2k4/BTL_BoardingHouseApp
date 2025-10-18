@@ -64,7 +64,7 @@ namespace BoardingHouseApp.Controllers
         {
             // Thiết lập ngày tạo và cập nhật
             contract.CreatedAt = DateTime.Now;
-            contract.UpdatedAt = DateTime.Now;
+            contract.UpdateAt = DateTime.Now;
 
             if (ModelState.IsValid)
             {
@@ -112,7 +112,7 @@ namespace BoardingHouseApp.Controllers
                 try
                 {
                     // Thiết lập ngày cập nhật
-                    contract.UpdatedAt = DateTime.Now;
+                    contract.UpdateAt = DateTime.Now;
 
                     // Do CreatedAt đã được bind, chỉ cần thiết lập UpdatedAt và trạng thái là Modified
                     _context.Update(contract);

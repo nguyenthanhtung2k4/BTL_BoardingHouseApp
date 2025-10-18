@@ -2,11 +2,16 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 namespace BoardingHouseApp.Models;
+
 public class Contracts
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public int Id { get; set; }
+        [Key]
+        public int Id { get; set; }
+        public bool Status { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public DateTime CreatedAt{ get; set; }
+        public DateTime UpdateAt{ get; set; }
 
         public int TenantId { get; set; }
         [ForeignKey("TenantId")]
@@ -16,5 +21,6 @@ public class Contracts
         [ForeignKey("RoomId")]
         public Room Room { get; set; }
 
-    public ICollection<Payment> Payments { get; set; }
-}
+        // Quan hệ 1-n với Payment
+        public ICollection<Payment>? Payments { get; set; }
+    }
