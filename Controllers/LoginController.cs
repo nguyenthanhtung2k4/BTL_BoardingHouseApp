@@ -19,7 +19,7 @@ namespace BoardingHouseApp.Controllers
                 return View(model);
             }
 
-            if ((model.Username == "adminApp" || model.Username == "adminApp@gmail.com") && model.Password == "adminApp1999@")
+            if ((model.Username == "admin" || model.Username == "adminApp@gmail.com") && model.Password == "admin123")
             {
                 // Tạo claims cho admin
                 var claims = new List<Claim>

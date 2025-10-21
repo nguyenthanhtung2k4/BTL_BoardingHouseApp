@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using BoardingHouseApp.Data;
 using BoardingHouseApp.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 
 namespace BoardingHouseApp.Controllers
