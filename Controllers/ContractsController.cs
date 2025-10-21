@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using BoardingHouseApp.Data;
 using BoardingHouseApp.Models;
+using BoardingHouseApp.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -12,7 +13,6 @@ namespace BoardingHouseApp.Controllers
     [Authorize]
     public class ContractsController : Controller
     {
-        // GIẢ ĐỊNH: Thay thế bằng DbContext thực tế của bạn
         private readonly AppDbContext _context;
 
         public ContractsController(AppDbContext context)
@@ -26,94 +26,137 @@ namespace BoardingHouseApp.Controllers
         {
             var contracts = _context.Contracts
                                     .Where(x => !x.IsDeleted)
-                                    .Include(c => c.Tenant) 
-                                    .Include(c => c.Room)   
+                                    .Include(c => c.Tenant)
+                                    .Include(c => c.Room)
                                     .OrderByDescending(c => c.CreatedAt);
 
             return View(await contracts.ToListAsync());
         }
 
-        [HttpGet]
-        // GET: /Contracts/Create
-        public IActionResult Create()
+        private void PopulateDropdowns(int? selectedRoomId = null, int? selectedTenantId = null)
         {
-            try
-            {
-                if (!_context.Tenants.Any() || !_context.Rooms.Any() )
-                {
-                    // Cảnh báo nếu có dữ liệu bị bỏ qua hoặc danh sách rỗng
-                    TempData["WarningMessage"] = "Cảnh báo: Không có người thuê nào trong hệ thống hoặc một số người thuê bị thiếu Tên/ID.";
-                }
+            // Room: Khóa chính là RoomId, Hiển thị là RoomNumber (Đã đúng)
+            ViewData["RoomId"] = new SelectList(
+                _context.Rooms.OrderBy(r => r.RoomNumber),
+                "RoomId",
+                "RoomNumber",
+                selectedRoomId
+            );
 
-                ViewData["TenantId"] = new SelectList(_context.Tenants, "TenantId", "FullName");
-                ViewData["RoomId"] = new SelectList(_context.Rooms, "RoomId", "RoomNumber");
-
-                return View();
-
-            }catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Đã xảy ra lỗi khi nạp dữ liệu: {ex.Message}. Vui lòng kiểm tra kết nối CSDL và Model.";
-                ViewData["TenantId"] = new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text");
-                ViewData["RoomId"] = new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text");
-                return View(new Contracts()); // Trả về đối tượng trống
-            }
+            // SỬA LỖI: Đổi thuộc tính giá trị từ "Id" sang "TenantId"
+            ViewData["TenantId"] = new SelectList(
+                _context.Tenants.OrderBy(t => t.FullName),
+                "TenantId", 
+                "FullName",
+                selectedTenantId
+            );
         }
 
-        // POST: /Contracts/Create
+        // GET: Contracts/Create
+        [HttpGet]
+        public IActionResult Create()
+        {
+            PopulateDropdowns();
+            return View(new ContractCreationViewModel());
+        }
+
+
+
+        // POST: Contracts/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("IsActive,StartDate,EndDate,TenantId,RoomId")] Contracts contract)
+        public async Task<IActionResult> Create(ContractCreationViewModel model)
         {
-            ModelState.Remove("CreatedAt");
-            ModelState.Remove("UpdatedAt");
-            ModelState.Remove("Tenant");
-            ModelState.Remove("Room");
-            ModelState.Remove("Payments");
+            bool businessLogicError = false;
 
-            if (ModelState.IsValid)
+            // --- KIỂM TRA NGOẠI LỆ NGHIỆP VỤ ---
+
+            // 1. EndDate phải sau StartDate
+            if (model.EndDate <= model.StartDate)
             {
+                ModelState.AddModelError(nameof(model.EndDate), "Ngày Kết Thúc phải sau Ngày Bắt Đầu.");
+                businessLogicError = true;
+            }
+
+            // 2. Nếu có Ngày Thanh Toán thực tế, phải có Phương Thức Thanh Toán
+            if (model.InitialPaymentDate.HasValue && string.IsNullOrWhiteSpace(model.InitialPaymentMethod))
+            {
+                ModelState.AddModelError(nameof(model.InitialPaymentMethod), "Nếu bạn nhập Ngày Thanh Toán, Phương Thức Thanh Toán là bắt buộc.");
+                businessLogicError = true;
+            }
+
+            // 3. Phòng không được có hợp đồng hoạt động trùng lặp
+            var roomCurrentlyOccupied = await _context.Contracts
+                .AnyAsync(c => c.RoomId == model.RoomId && c.IsActive && c.EndDate >= model.StartDate && !c.IsDeleted);
+
+            if (roomCurrentlyOccupied)
+            {
+                ModelState.AddModelError(nameof(model.RoomId), "Phòng này hiện đang có hợp đồng khác có hiệu lực trùng với khoảng thời gian này.");
+                businessLogicError = true;
+            }
+
+
+            if (ModelState.IsValid && !businessLogicError)
+            {
+                // Bắt đầu Transaction
+                using var transaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
-                    contract.UpdatedAt = null;
-
-                    _context.Add(contract);
+                    // 1. Tạo và Lưu Hợp đồng (Contracts)
+                    var contract = new Contracts
+                    {
+                        RoomId = model.RoomId,
+                        TenantId = model.TenantId,
+                        StartDate = model.StartDate,
+                        EndDate = model.EndDate,
+                        IsActive = model.IsActive,
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now,
+                        IsDeleted = false
+                    };
+                    _context.Contracts.Add(contract);
                     await _context.SaveChangesAsync();
 
-                    TempData["SuccessMessage"] = "Thêm hợp đồng mới thành công! 🎉";
+                    // 2. Tạo và Lưu Thanh toán/Hóa đơn Ban đầu (Payment)
+                    var payment = new Payment
+                    {
+                        ContractId = contract.Id,
+                        Amount = model.InitialAmount,
+                        Description = model.InitialDescription,
+
+                        // Xác định trạng thái và ngày/phương thức thanh toán
+                        Status = model.InitialPaymentDate.HasValue ? 1 : 0, // 1=Đã TT, 0=Chưa TT
+                        PaymentDate = model.InitialPaymentDate,
+                        PaymentMethod = model.InitialPaymentDate.HasValue ? model.InitialPaymentMethod : "Hóa đơn/Chưa thanh toán",
+
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now
+                    };
+
+                    _context.Payments.Add(payment);
+                    await _context.SaveChangesAsync();
+
+                    // 3. Commit Transaction nếu mọi thứ thành công
+                    await transaction.CommitAsync();
+
                     return RedirectToAction(nameof(Index));
-                }
-                catch (DbUpdateException dbEx)
-                {
-                    // Lỗi DB (ví dụ: Constraint Violation, ID không tồn tại)
-                    TempData["ErrorMessage"] = $"Lỗi CSDL: Không thể lưu hợp đồng. Vui lòng kiểm tra ID người thuê/phòng. Chi tiết: {dbEx.InnerException?.Message ?? dbEx.Message}";
                 }
                 catch (Exception ex)
                 {
-                    // Lỗi chung
-                    TempData["ErrorMessage"] = $"Đã xảy ra lỗi không xác định khi tạo hợp đồng: {ex.Message}";
+                    // Rollback transaction nếu thất bại
+                    await transaction.RollbackAsync();
+
+                    // Ghi log lỗi vào hệ thống (thực tế)
+                    // _logger.LogError(ex, "Lỗi khi tạo Hợp đồng và Thanh toán.");
+
+                    ModelState.AddModelError(string.Empty, "Lỗi hệ thống khi lưu dữ liệu. Vui lòng kiểm tra lại thông tin và thử lại.");
                 }
             }
 
-            // --- 2. Xử lý khi ModelState.IsValid
-            var validTenants = _context.Tenants
-                .AsNoTracking()
-                .Where(t => t.TenantId > 0 && !string.IsNullOrEmpty(t.FullName))
-                .Select(t => new { t.TenantId, t.FullName })
-                .ToList();
-            
-            ViewData["TenantId"] = new SelectList(validTenants, "TenantId", "FullName", contract.TenantId);
-
-            var validRooms = _context.Rooms
-                .AsNoTracking()
-                .Where(r => r.RoomId > 0 && !string.IsNullOrEmpty(r.RoomNumber))
-                .Select(r => new { r.RoomId, r.RoomNumber })
-                .ToList();
-            ViewData["RoomId"] = new SelectList(validRooms, "RoomId", "RoomNumber", contract.RoomId);
-
-            return View(contract);
-
+            // Nếu model không hợp lệ hoặc có lỗi, phải nạp lại ViewData (khắc phục lỗi NullReferenceException)
+            PopulateDropdowns(model.RoomId, model.TenantId);
+            return View(model);
         }
-
 
         // GET: /Contracts/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -135,7 +178,6 @@ namespace BoardingHouseApp.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // 3. Chuẩn bị SelectList (Tương tự như Create, nhưng chọn giá trị hiện tại)
 
                 // Danh sách người thuê
                 var validTenants = await _context.Tenants
@@ -178,12 +220,17 @@ namespace BoardingHouseApp.Controllers
                 TempData["ErrorMessage"] = "ID hợp đồng không khớp.";
                 return RedirectToAction(nameof(Index));
             }
+            if (contract.Id == 0)
+            {
+                contract.Id = id;
+            }
 
             // 1. Loại bỏ các trường tự động quản lý để tránh lỗi validation không cần thiết
             ModelState.Remove("UpdatedAt");
             ModelState.Remove("Tenant");
             ModelState.Remove("Room");
             ModelState.Remove("Payments");
+            ModelState.Remove("IsDeleted");
 
             // Lưu ý: Chúng ta giữ lại "CreatedAt" từ Bind để không bị mất giá trị gốc
 
@@ -192,7 +239,8 @@ namespace BoardingHouseApp.Controllers
                 try
                 {
                     // 2. Cập nhật trường UpdateAt
-                    contract.UpdatedAt = DateTime.UtcNow;
+                    contract.UpdatedAt = DateTime.Now;
+                    
 
                     // 3. Cập nhật vào DB
                     _context.Update(contract);
@@ -225,7 +273,6 @@ namespace BoardingHouseApp.Controllers
                 }
             }
 
-            // 4. Nếu ModelState không hợp lệ hoặc xảy ra lỗi lưu DB: Tái tạo SelectList
 
             // Danh sách người thuê
             var validTenants = await _context.Tenants
@@ -252,33 +299,21 @@ namespace BoardingHouseApp.Controllers
         {
             if (id == null)
             {
-                TempData["ErrorMessage"] = "Không tìm thấy ID hợp đồng.";
-                return RedirectToAction(nameof(Index));
+                return NotFound();
             }
 
-            try
+            var contract = await _context.Contracts
+                .Include(c => c.Room)    
+                .Include(c => c.Tenant) 
+                .Include(c => c.Payments.OrderByDescending(p => p.CreatedAt)) 
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (contract == null)
             {
-                // Sử dụng .Include() để tải thông tin Tenant và Room cùng lúc
-                var contract = await _context.Contracts
-                    .Include(c => c.Tenant)
-                    .Include(c => c.Room)
-                    // Lấy thêm Payments nếu bạn muốn hiển thị lịch sử thanh toán
-                    .Include(c => c.Payments)
-                    .FirstOrDefaultAsync(m => m.Id == id); // Dùng Id, không phải ContractsId
-
-                if (contract == null)
-                {
-                    TempData["ErrorMessage"] = "Không tìm thấy hợp đồng yêu cầu.";
-                    return RedirectToAction(nameof(Index));
-                }
-
-                return View(contract);
+                return NotFound();
             }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Lỗi khi tải chi tiết hợp đồng: {ex.Message}";
-                return RedirectToAction(nameof(Index));
-            }
+
+            return View(contract);
         }
 
         // GET: /Contracts/Delete/5 (Hiển thị trang xác nhận)
@@ -292,7 +327,6 @@ namespace BoardingHouseApp.Controllers
 
             try
             {
-                // Sử dụng .Include() để tải thông tin Tenant và Room để hiển thị chi tiết xác nhận
                 var contract = await _context.Contracts
                     .Include(c => c.Tenant)
                     .Include(c => c.Room)
@@ -314,7 +348,7 @@ namespace BoardingHouseApp.Controllers
         }
 
 
-        // POST: /Contracts/Delete/5 (Thực hiện Soft Delete)
+        // POST: /Contracts/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -325,8 +359,8 @@ namespace BoardingHouseApp.Controllers
 
                 if (contract != null)
                 {
-                    contract.IsDeleted = true; // Đánh dấu là đã xóa
-                    contract.UpdatedAt = DateTime.UtcNow; // Cập nhật thời gian thay đổi
+                    contract.IsDeleted = true; 
+                    contract.UpdatedAt = DateTime.UtcNow; 
 
                     _context.Update(contract);
                     await _context.SaveChangesAsync();
