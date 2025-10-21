@@ -1,0 +1,121 @@
+﻿@model BoardingHouseApp.Models.Contracts
+
+@{
+    ViewData["Title"] = "Chỉnh sửa Hợp đồng";
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Lỗi!</strong> @Html.Raw(TempData["ErrorMessage"])
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["WarningMessage"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <strong>Cảnh báo!</strong> @Html.Raw(TempData["WarningMessage"])
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<h2 class="mb-4 text-warning">Chỉnh sửa Hợp đồng</h2>
+
+<div class="card shadow-lg p-3 mb-5 bg-white rounded">
+    <div class="card-body">
+        <form asp-action="Edit" onsubmit="return validateForm()">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" id="validationSummary"></div>
+
+          @*   TRƯỜNG ContractsId ẨN (BẮT BUỘC ĐỐI VỚI EDIT) *@
+            @* <input type="hidden" asp-for="ContractsId" /> *@
+            @* TRƯỜNG CreatedAt ẨN (Để giữ lại giá trị gốc) *@
+            @* <input type="hidden" asp-for="CreatedAt" /> *@
+
+            <div class="row">
+                @* Cột 1 *@
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="RoomId" class="form-label">Phòng Thuê</label>
+                        <select asp-for="RoomId" class="form-select" asp-items="ViewBag.RoomId">
+                            <option value="">-- Chọn Phòng --</option>
+                        </select>
+                        <span asp-validation-for="RoomId" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="TenantId" class="form-label">Người Thuê</label>
+                        <select asp-for="TenantId" class="form-select" asp-items="ViewBag.TenantId">
+                            <option value="">-- Chọn Người Thuê --</option>
+                        </select>
+                        <span asp-validation-for="TenantId" class="text-danger"></span>
+                    </div>
+                </div>
+
+                @* Cột 2 *@
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="StartDate" class="form-label">Ngày Bắt Đầu</label>
+                        <input asp-for="StartDate" type="date" class="form-control" id="StartDateInput" />
+                        <span asp-validation-for="StartDate" class="text-danger"></span>
+                        <div id="startDateError" class="text-danger"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="EndDate" class="form-label">Ngày Kết Thúc</label>
+                        <input asp-for="EndDate" type="date" class="form-control" id="EndDateInput" />
+                        <span asp-validation-for="EndDate" class="text-danger"></span>
+                        <div id="endDateError" class="text-danger"></div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input class="form-check-input" asp-for="IsActive" />
+                        <label class="form-check-label" asp-for="IsActive">
+                            @Html.DisplayNameFor(model => model.IsActive) (Hợp đồng đang có hiệu lực)
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <div class="d-flex justify-content-between">
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left-circle-fill"></i> Quay lại Danh sách
+                </a>
+                <button type="submit" class="btn btn-warning text-white">
+                    <i class="bi bi-save-fill"></i> Lưu Chỉnh sửa
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    @* KHỐI JAVASCRIPT THỰC HIỆN KIỂM TRA NGÀY THÁNG *@
+    <script>
+        // Hàm kiểm tra được gọi khi người dùng nhấn nút gửi (submit)
+        function validateForm() {
+            let startDateValue = document.getElementById('StartDateInput').value;
+            let endDateValue = document.getElementById('EndDateInput').value;
+            let isValid = true;
+
+            document.getElementById('endDateError').innerHTML = '';
+
+            if (startDateValue && endDateValue) {
+                const start = new Date(startDateValue);
+                const end = new Date(endDateValue);
+
+                if (end <= start) {
+                    document.getElementById('endDateError').innerHTML = 'Ngày Kết Thúc phải **nghiêm ngặt sau** Ngày Bắt Đầu!';
+                    isValid = false;
+                }
+            }
+            return isValid;
+        }
+    </script>
+}

@@ -1,0 +1,79 @@
+﻿@model BoardingHouseApp.Models.Contracts
+
+@{
+    ViewData["Title"] = "Xác nhận Xóa Hợp đồng";
+}
+
+@* HIỂN THỊ THÔNG BÁO LỖI (NẾU CÓ) *@
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Lỗi!</strong> @Html.Raw(TempData["ErrorMessage"])
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<h2 class="mb-4 text-danger">Xác nhận Xóa Hợp đồng</h2>
+
+<div class="alert alert-warning border-0 d-flex align-items-center" role="alert">
+    <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2" style="font-size: 1.5rem;"></i>
+    <div>
+        <strong>Cảnh báo!</strong> Bạn có chắc chắn muốn xóa hợp đồng này không? Thao tác này **không thể hoàn tác**.
+    </div>
+</div>
+
+<div class="card shadow-lg mb-5">
+    <div class="card-header bg-danger text-white">
+        <h5 class="my-0">Thông tin Hợp đồng cần xóa</h5>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">ID Hợp đồng</dt>
+            <dd class="col-sm-9">#@Html.DisplayFor(model => model.Id)</dd>
+
+            <dt class="col-sm-3">Phòng thuê</dt>
+            <dd class="col-sm-9">
+                <span class="badge bg-primary fs-6">@Html.DisplayFor(model => model.Room.RoomNumber)</span>
+            </dd>
+
+            <dt class="col-sm-3">Người thuê</dt>
+            <dd class="col-sm-9">
+                @Html.DisplayFor(model => model.Tenant.FullName)
+            </dd>
+
+            <dt class="col-sm-3">Thời gian hợp đồng</dt>
+            <dd class="col-sm-9">
+                Từ **@Model.StartDate.ToShortDateString()** đến **@Model.EndDate.ToShortDateString()**
+            </dd>
+
+            <dt class="col-sm-3">Trạng thái</dt>
+            <dd class="col-sm-9">
+                @{
+                    var statusClass = Model.IsActive ? "bg-success" : "bg-secondary";
+                    var statusText = Model.IsActive ? "Đang hiệu lực" : "Đã kết thúc";
+                }
+                <span class="badge @statusClass">@statusText</span>
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="Delete">
+    @* Gửi ContractsId (Id) ẩn đi để Controller biết xóa bản ghi nào *@
+    <input type="hidden" asp-for="Id" />
+
+    <div class="d-flex justify-content-between">
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left-circle-fill"></i> Hủy và Quay lại
+        </a>
+        <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash-fill"></i> **Xác nhận Xóa Hợp đồng**
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
