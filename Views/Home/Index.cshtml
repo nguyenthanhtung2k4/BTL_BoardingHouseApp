@@ -10,7 +10,9 @@
 
     <div class="row g-4">
       <div class="col-12 col-sm-6 col-lg-4">
-        <a class="dash-card d-block" href="/Rooms">
+        <a class="dash-card d-block" 
+            asp-controller="Rooms"
+            asp-action="Index">
           <div class="dash-icon"><i class="bi bi-door-open"></i></div>
           <div class="dash-title">Phòng</div>
           <div class="dash-desc">Danh sách phòng, thêm phòng mới, giá thuê & diện tích.</div>
@@ -28,7 +30,9 @@
       </div>
 
       <div class="col-12 col-sm-6 col-lg-4">
-        <a class="dash-card disabled d-block" href="Contracts">
+        <a class="dash-card  d-block"
+            asp-controller="Contracts"
+            asp-action="Index">
           <div class="dash-icon"><i class="bi bi-file-earmark-text"></i></div>
           <div class="dash-title">Hợp đồng</div>
           <div class="dash-desc">Tạo & theo dõi hợp đồng (sẽ thêm sau).</div>
@@ -36,7 +40,9 @@
       </div>
 
       <div class="col-12 col-sm-6 col-lg-4">
-        <a class="dash-card disabled d-block" href="Payment">
+        <a class="dash-card  d-block" 
+            asp-controller="Payments"
+            asp-action="Index">
           <div class="dash-icon"><i class="bi bi-receipt"></i></div>
           <div class="dash-title">Hóa đơn</div>
           <div class="dash-desc">Lập & thanh toán hóa đơn (sẽ thêm sau).</div>
@@ -44,7 +50,9 @@
       </div>
 
       <div class="col-12 col-sm-6 col-lg-4">
-        <a class="dash-card disabled d-block" href="#">
+                <a class="dash-card  d-block"
+                   asp-controller="Report"
+                   asp-action="Index">
           <div class="dash-icon"><i class="bi bi-bar-chart"></i></div>
           <div class="dash-title">Báo cáo</div>
           <div class="dash-desc">Doanh thu, công nợ (sẽ thêm sau).</div>
@@ -52,7 +60,7 @@
       </div>
 
       <div class="col-12 col-sm-6 col-lg-4">
-        <a class="dash-card disabled d-block" href="#">
+        <a class="dash-card  d-block" href="#">
           <div class="dash-icon"><i class="bi bi-gear"></i></div>
           <div class="dash-title">Cài đặt</div>
           <div class="dash-desc">Cấu hình hệ thống (sẽ thêm sau).</div>

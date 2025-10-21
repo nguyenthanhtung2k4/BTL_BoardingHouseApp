@@ -1,0 +1,100 @@
+﻿@model BoardingHouseApp.Models.Payment
+
+@{
+    ViewData["Title"] = "Chi Tiết Thanh Toán";
+}
+
+<h2 class="mb-4 text-info">Chi Tiết Thanh Toán #@Model.Id</h2>
+
+<div class="card shadow-lg p-4 mb-5 bg-white rounded">
+    <div class="card-body">
+        <h4 class="text-secondary mb-3 border-bottom pb-2">Thông Tin Giao Dịch</h4>
+        <dl class="row">
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.Description)
+            </dt>
+            <dd class="col-sm-8">
+                <strong>@Html.DisplayFor(model => model.Description)</strong>
+            </dd>
+
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.Amount)
+            </dt>
+            <dd class="col-sm-8">
+                <strong class="text-success">@Model.Amount.ToString("N0") VNĐ</strong>
+            </dd>
+
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.Status)
+            </dt>
+            <dd class="col-sm-8">
+                @{
+                    string statusText = Model.Status == 1 ? "Đã thanh toán" : (Model.Status == 0 ? "Chưa thanh toán (Hóa đơn)" : "Quá hạn");
+                    string badgeClass = Model.Status == 1 ? "bg-success" : (Model.Status == 0 ? "bg-warning text-dark" : "bg-danger");
+                }
+                <span class="badge fs-6 @badgeClass">@statusText</span>
+            </dd>
+
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.PaymentDate)
+            </dt>
+            <dd class="col-sm-8">
+                @(Model.PaymentDate.HasValue? Model.PaymentDate.Value.ToString("dd/MM/yyyy") : "N/A (Chưa thanh toán)")
+            </dd>
+
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.PaymentMethod)
+            </dt>
+            <dd class="col-sm-8">
+                @Html.DisplayFor(model => model.PaymentMethod)
+            </dd>
+
+            <dt class="col-sm-4">
+                Ngày Ghi Nhận
+            </dt>
+            <dd class="col-sm-8">
+                @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+            </dd>
+
+            <dt class="col-sm-4">
+                Cập nhật lần cuối
+            </dt>
+            <dd class="col-sm-8">
+                @Model.UpdatedAt.ToString("dd/MM/yyyy HH:mm")
+            </dd>
+        </dl>
+
+        <hr class="my-4" />
+
+        <h4 class="text-secondary mb-3 border-bottom pb-2">Thông Tin Hợp Đồng Liên Quan</h4>
+        <dl class="row">
+            <dt class="col-sm-4">
+                Mã Hợp Đồng
+            </dt>
+            <dd class="col-sm-8">
+                <a asp-controller="Contracts" asp-action="Details" asp-route-id="@Model.ContractId">
+                    <strong>HD#@Model.ContractId</strong>
+                </a>
+            </dd>
+
+            <dt class="col-sm-4">
+                Phòng Thuê
+            </dt>
+            <dd class="col-sm-8">
+                @Model.Contract?.Room?.RoomNumber
+            </dd>
+
+            <dt class="col-sm-4">
+                Người Thuê
+            </dt>
+            <dd class="col-sm-8">
+                @Model.Contract?.Tenant?.FullName
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Sửa Thanh Toán</a> |
+    <a asp-action="Index" class="btn btn-secondary">Quay lại Danh sách</a>
+</div>

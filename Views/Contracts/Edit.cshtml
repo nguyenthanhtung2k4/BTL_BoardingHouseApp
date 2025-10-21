@@ -25,12 +25,15 @@
 <div class="card shadow-lg p-3 mb-5 bg-white rounded">
     <div class="card-body">
         <form asp-action="Edit" onsubmit="return validateForm()">
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" id="validationSummary"></div>
 
-          @*   TRƯỜNG ContractsId ẨN (BẮT BUỘC ĐỐI VỚI EDIT) *@
-            @* <input type="hidden" asp-for="ContractsId" /> *@
-            @* TRƯỜNG CreatedAt ẨN (Để giữ lại giá trị gốc) *@
-            @* <input type="hidden" asp-for="CreatedAt" /> *@
+            @* TRƯỜNG KHÓA CHÍNH (ID) - BẮT BUỘC VÀ CHỈ CẦN 1 LẦN *@
+            <input type="hidden" asp-for="Id" />
+
+            <input type="hidden" asp-for="CreatedAt" />
+
+            <input type="hidden" asp-for="IsDeleted" />
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" id="validationSummary"></div>
 
             <div class="row">
                 @* Cột 1 *@
@@ -70,9 +73,7 @@
 
                     <div class="mb-3 form-check">
                         <input class="form-check-input" asp-for="IsActive" />
-                        <label class="form-check-label" asp-for="IsActive">
-                            @Html.DisplayNameFor(model => model.IsActive) (Hợp đồng đang có hiệu lực)
-                        </label>
+                        <label class="form-check-label" asp-for="IsActive"></label>
                     </div>
                 </div>
             </div>
@@ -96,7 +97,6 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
-    @* KHỐI JAVASCRIPT THỰC HIỆN KIỂM TRA NGÀY THÁNG *@
     <script>
         // Hàm kiểm tra được gọi khi người dùng nhấn nút gửi (submit)
         function validateForm() {

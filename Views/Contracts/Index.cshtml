@@ -52,11 +52,9 @@
                     {
                         <tr>
                             <td>
-                                @* Giả định Room có thuộc tính Name *@
                                 <span class="badge bg-info text-dark">@Html.DisplayFor(modelItem => item.Room.RoomNumber)</span>
                             </td>
                             <td>
-                                @* Giả định Tenant có thuộc tính FullName *@
                                 @Html.DisplayFor(modelItem => item.Tenant.FullName)
                             </td>
                             <td>
@@ -69,12 +67,11 @@
                             <td>
                                 @{
                                     var statusClass = item.IsActive ? "bg-success" : "bg-secondary";
-                                    var statusText = item.IsActive ? "Đang hiệu lực" : "Đã kết thúc";
+                                    var statusText = item.IsActive ? "Đang hiệu lực" : "Đã kết thúc" ;
                                 }
                                 <span class="badge @statusClass">@statusText</span>
                             </td>
                             <td>
-                                @* Các nút thao tác cơ bản: Sửa, Chi tiết, Xóa (giả định có các action này) *@
                                 <div class="btn-group" role="group">
                                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary" title="Sửa">
                                         <i class="bi bi-pencil-fill"></i>

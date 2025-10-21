@@ -1,0 +1,99 @@
+﻿@model IEnumerable<BoardingHouseApp.Models.Payment>
+
+@{
+    ViewData["Title"] = "Quản Lý Thanh Toán";
+}
+
+<h2 class="mb-4 text-primary">Danh Sách Thanh Toán & Hóa Đơn</h2>
+
+<div class="d-flex justify-content-between mb-3">
+    <a asp-action="Create" class="btn btn-success shadow-sm">
+        <i class="bi bi-plus-circle-fill"></i> Tạo Mới Thanh Toán
+    </a>
+</div>
+
+<div class="card shadow-lg p-3 bg-white rounded">
+    <div class="card-body p-0">
+        <table class="table table-hover table-sm">
+            <thead>
+                <tr class="table-primary">
+                    <th>
+                        @Html.DisplayNameFor(model => model.Description)
+                    </th>
+                    <th>
+                        HĐ/Phòng
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Amount)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.PaymentDate)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Status)
+                    </th>
+                    <th>
+                        Ngày Ghi Nhận
+                    </th>
+                    <th class="text-center">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Description)
+                        </td>
+                        <td>
+                            <span class="text-muted">HD#@item.ContractId</span> <br />
+                            Phòng: <strong>@item.Contract?.Room?.RoomNumber</strong>
+                        </td>
+                        <td>
+                            <strong class="text-success">@item.Amount.ToString("N0") VNĐ</strong>
+                        </td>
+                        <td>
+                            @(item.PaymentDate.HasValue? item.PaymentDate.Value.ToString("dd/MM/yyyy") : "-")
+                        </td>
+                        <td>
+                            @{
+                                string statusText = "N/A";
+                                string badgeClass = "bg-secondary";
+                                switch (item.Status)
+                                {
+                                    case 0:
+                                        statusText = "Chưa thanh toán";
+                                        badgeClass = "bg-warning text-dark";
+                                        break;
+                                    case 1:
+                                        statusText = "Đã thanh toán";
+                                        badgeClass = "bg-success";
+                                        break;
+                                    case 2:
+                                        statusText = "Quá hạn";
+                                        badgeClass = "bg-danger";
+                                        break;
+                                }
+                            }
+                            <span class="badge @badgeClass">@statusText</span>
+                        </td>
+                        <td>
+                            @item.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                        </td>
+                        <td class="text-center">
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Sửa">
+                                <i class="bi bi-pencil-fill"></i>
+                            </a>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info ms-1" title="Chi tiết">
+                                <i class="bi bi-info-circle-fill"></i>
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger ms-1" title="Xóa">
+                                <i class="bi bi-trash-fill"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

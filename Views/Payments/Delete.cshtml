@@ -1,0 +1,83 @@
+﻿@model BoardingHouseApp.Models.Payment
+
+@{
+    ViewData["Title"] = "Xóa Thanh Toán";
+}
+
+<h2 class="mb-4 text-danger">Xác Nhận Xóa Thanh Toán</h2>
+
+<div class="alert alert-danger shadow-sm" role="alert">
+    <i class="bi bi-exclamation-triangle-fill"></i> **CẢNH BÁO:** Bạn có chắc chắn muốn **XÓA VĨNH VIỄN** giao dịch thanh toán này không? Thao tác này không thể hoàn tác.
+</div>
+
+<div class="card shadow-lg p-4 mb-5 bg-white rounded">
+    <div class="card-body">
+        <h4 class="text-secondary mb-3 border-bottom pb-2">Thông Tin Giao Dịch Cần Xóa</h4>
+        <dl class="row">
+
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.Description)
+            </dt>
+            <dd class="col-sm-8">
+                <strong>@Html.DisplayFor(model => model.Description)</strong>
+            </dd>
+
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.Amount)
+            </dt>
+            <dd class="col-sm-8">
+                <strong class="text-success">@Model.Amount.ToString("N0") VNĐ</strong>
+            </dd>
+
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.Status)
+            </dt>
+            <dd class="col-sm-8">
+                @{
+                    string statusText = Model.Status == 1 ? "Đã thanh toán" : (Model.Status == 0 ? "Chưa thanh toán (Hóa đơn)" : "Quá hạn");
+                    string badgeClass = Model.Status == 1 ? "bg-success" : (Model.Status == 0 ? "bg-warning text-dark" : "bg-danger");
+                }
+                <span class="badge fs-6 @badgeClass">@statusText</span>
+            </dd>
+
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.PaymentDate)
+            </dt>
+            <dd class="col-sm-8">
+                @(Model.PaymentDate.HasValue? Model.PaymentDate.Value.ToString("dd/MM/yyyy") : "N/A (Chưa thanh toán)")
+            </dd>
+
+            <dt class="col-sm-4">
+                Hợp Đồng/Phòng
+            </dt>
+            <dd class="col-sm-8">
+                HD#@Model.ContractId - Phòng: **@Model.Contract?.Room?.RoomNumber**
+            </dd>
+
+            <dt class="col-sm-4">
+                Người Thuê
+            </dt>
+            <dd class="col-sm-8">
+                @Model.Contract?.Tenant?.FullName
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="Delete">
+    <input type="hidden" asp-for="Id" />
+    <div class="d-flex justify-content-between">
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left-circle-fill"></i> Hủy và Quay lại
+        </a>
+        <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash-fill"></i> **XÁC NHẬN XÓA**
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
