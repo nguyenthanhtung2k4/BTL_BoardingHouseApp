@@ -1,14 +1,13 @@
 ﻿@model BoardingHouseApp.Models.Room
 @{
-    ViewData["Title"] = "Sửa phòng";
+    ViewData["Title"] = "Thêm phòng";
 }
 <div class="container py-4">
-    <h2>Sửa phòng</h2>
+    <h2>Thêm phòng</h2>
 
     <form asp-action="Edit" method="post" class="mt-3">
-        <input type="hidden" asp-for="RoomId" />
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
+        <input type="hidden" asp-for="RoomId" />
         <div class="mb-3">
             <label class="form-label">Số phòng</label>
             <input asp-for="RoomNumber" class="form-control" />
@@ -17,15 +16,60 @@
 
         <div class="mb-3">
             <label class="form-label">Giá thuê</label>
-            <input asp-for="Price" class="form-control" />
+            <input asp-for="Price" class="form-control" id="Price" />
             <span asp-validation-for="Price" class="text-danger"></span>
         </div>
 
-        <button type="submit" class="btn btn-primary">Cập nhật</button>
+        <div class="mb-3">
+            <label class="form-label">Trạng thái</label>
+            <select asp-for="Status" class="form-select">
+                <option value="">-- Chọn trạng thái --</option>
+                <option value="0">Trống</option>
+                <option value="1">Đang thuê</option>
+                <option value="2">Bảo trì</option>
+            </select>
+            <span asp-validation-for="Status" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Lưu</button>
         <a asp-action="Index" class="btn btn-secondary ms-2">Hủy</a>
     </form>
 </div>
 
 @section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const priceInput = document.getElementById('Price');
+            
+            // Hàm định dạng số
+            function formatNumber(number) {
+                // Chuyển thành số và định dạng với toLocaleString
+                let num = parseInt(number.replace(/\D/g, '') || '0');
+                return num.toLocaleString('vi-VN');
+            }
+            
+            // Định dạng giá trị ban đầu khi tải trang
+            if (priceInput.value) {
+                priceInput.value = formatNumber(priceInput.value);
+            }
+            
+            // Sự kiện khi nhập
+            priceInput.addEventListener('input', function (e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value) {
+                    e.target.value = formatNumber(value);
+                } else {
+                    e.target.value = '';
+                }
+            });
+
+            // Trước khi submit, chuyển về dạng số không dấu phân cách
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function (e) {
+                let value = priceInput.value.replace(/\D/g, '');
+                priceInput.value = value;
+            });
+        });
+    </script>
     <partial name="_ValidationScriptsPartial" />
 }

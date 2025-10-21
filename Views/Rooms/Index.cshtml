@@ -23,6 +23,7 @@
                 <th>Mã</th>
                 <th>Số phòng</th>
                 <th>Giá thuê</th>
+                <th>Trạng thái</th>
                 <th>Ngày tạo</th>
                 <th>Ngày cập nhật</th>
                 <th class="text-end">Thao tác</th>
@@ -35,6 +36,11 @@
                 <td>@r.RoomId</td>
                 <td>@r.RoomNumber</td>
                 <td>@r.Price.ToString("N0") đ</td>
+                <td>
+                    <span class="badge @GetStatusBadgeClass(r.Status)">
+                        @GetStatusDisplayName(r.Status)
+                    </span>
+                </td>
                 <td>@r.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                 <td>@r.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                 <td class="text-end">
@@ -88,4 +94,30 @@
             }
         });
     </script>
+}
+
+@functions {
+    // Hàm trả về class CSS cho badge dựa trên trạng thái
+    public string GetStatusBadgeClass(BoardingHouseApp.Models.RoomStatus status)
+    {
+        return status switch
+        {
+            BoardingHouseApp.Models.RoomStatus.Empty => "bg-success",
+            BoardingHouseApp.Models.RoomStatus.Occupied => "bg-primary",
+            BoardingHouseApp.Models.RoomStatus.Maintenance => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    // Hàm trả về tên hiển thị tiếng Việt cho trạng thái
+    public string GetStatusDisplayName(BoardingHouseApp.Models.RoomStatus status)
+    {
+        return status switch
+        {
+            BoardingHouseApp.Models.RoomStatus.Empty => "Trống",
+            BoardingHouseApp.Models.RoomStatus.Occupied => "Đang thuê",
+            BoardingHouseApp.Models.RoomStatus.Maintenance => "Bảo trì",
+            _ => "Không xác định"
+        };
+    }
 }
