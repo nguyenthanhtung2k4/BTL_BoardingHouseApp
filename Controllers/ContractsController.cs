@@ -8,10 +8,10 @@ using Microsoft.EntityFrameworkCore;
 namespace BoardingHouseApp.Controllers
 {
     [Authorize]
-    public class ContractController : Controller
+    public class ContractsController : Controller
     {
         private readonly AppDbContext _context;
-        public ContractController(AppDbContext context)
+        public ContractsController(AppDbContext context)
         {
             _context = context;
 
