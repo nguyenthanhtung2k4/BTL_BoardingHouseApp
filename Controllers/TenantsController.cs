@@ -65,9 +65,9 @@ namespace BoardingHouseApp.Controllers
                         <p>Bạn đã được thêm vào hệ thống quản lý nhà trọ với thông tin đăng nhập sau:</p>
                         
                         <div style='background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;'>
-                            <p><strong>📧 Email đăng nhập:</strong> {tenant.Email}</p>
-                            <p><strong>🔑 Mật khẩu mặc định:</strong> {defaultPassword}</p>
-                            <p><strong>📞 Số điện thoại:</strong> {tenant.Phone}</p>
+                            <p><strong>Email đăng nhập:</strong> {tenant.Email}</p>
+                            <p><strong>Mật khẩu mặc định:</strong> {defaultPassword}</p>
+                            <p><strong>Số điện thoại:</strong> {tenant.Phone}</p>
                         </div>
                         
                         <p><strong>⚠️ Lưu ý quan trọng:</strong></p>
