@@ -104,6 +104,10 @@ else
 }
 
 <div class="mt-4">
-    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Sửa Hợp đồng</a> |
+    @if (User.IsInRole("Admin"))
+    {
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Sửa Hợp đồng</a>
+        <text>|</text>
+    }
     <a asp-action="Index" class="btn btn-secondary">Quay lại Danh sách</a>
 </div>
