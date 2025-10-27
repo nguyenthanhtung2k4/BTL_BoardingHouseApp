@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using BoardingHouseApp.Data;
 using BoardingHouseApp.Models;
@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace BoardingHouseApp.Controllers
 {
@@ -24,13 +25,41 @@ namespace BoardingHouseApp.Controllers
         // GET: /Contracts
         public async Task<IActionResult> Index()
         {
-            var contracts = _context.Contracts
+            // 🔐 PHÂN QUYỀN: Admin xem tất cả, Tenant chỉ xem hợp đồng của mình
+            if (User.IsInRole("Admin"))
+            {
+                var contracts = _context.Contracts
                                     .Where(x => !x.IsDeleted)
                                     .Include(c => c.Tenant)
                                     .Include(c => c.Room)
                                     .OrderByDescending(c => c.CreatedAt);
 
-            return View(await contracts.ToListAsync());
+                return View(await contracts.ToListAsync());
+            }
+            else if (User.IsInRole("Tenant"))
+            {
+                var tenantId = GetCurrentTenantId();
+                var contracts = _context.Contracts
+                                    .Where(x => !x.IsDeleted && x.TenantId == tenantId)
+                                    .Include(c => c.Tenant)
+                                    .Include(c => c.Room)
+                                    .OrderByDescending(c => c.CreatedAt);
+
+                return View(await contracts.ToListAsync());
+            }
+
+            return Forbid();
+        }
+
+        // 🔐 HÀM LẤY TENANT ID HIỆN TẠI
+        private int GetCurrentTenantId()
+        {
+            var tenantIdClaim = User.FindFirst("TenantId");
+            if (tenantIdClaim != null && int.TryParse(tenantIdClaim.Value, out int tenantId))
+            {
+                return tenantId;
+            }
+            return 0;
         }
 
         private void PopulateDropdowns(int? selectedRoomId = null, int? selectedTenantId = null)
@@ -52,19 +81,19 @@ namespace BoardingHouseApp.Controllers
             );
         }
 
-        // GET: Contracts/Create
+        // GET: Contracts/Create - CHỈ ADMIN
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
             PopulateDropdowns();
             return View(new ContractCreationViewModel());
         }
 
-
-
-        // POST: Contracts/Create
+        // POST: Contracts/Create - CHỈ ADMIN
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(ContractCreationViewModel model)
         {
             bool businessLogicError = false;
@@ -94,7 +123,6 @@ namespace BoardingHouseApp.Controllers
                 ModelState.AddModelError(nameof(model.RoomId), "Phòng này hiện đang có hợp đồng khác có hiệu lực trùng với khoảng thời gian này.");
                 businessLogicError = true;
             }
-
 
             if (ModelState.IsValid && !businessLogicError)
             {
@@ -139,15 +167,13 @@ namespace BoardingHouseApp.Controllers
                     // 3. Commit Transaction nếu mọi thứ thành công
                     await transaction.CommitAsync();
 
+                    TempData["SuccessMessage"] = "Tạo hợp đồng thành công!";
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {
                     // Rollback transaction nếu thất bại
                     await transaction.RollbackAsync();
-
-                    // Ghi log lỗi vào hệ thống (thực tế)
-                    // _logger.LogError(ex, "Lỗi khi tạo Hợp đồng và Thanh toán.");
 
                     ModelState.AddModelError(string.Empty, "Lỗi hệ thống khi lưu dữ liệu. Vui lòng kiểm tra lại thông tin và thử lại.");
                 }
@@ -178,6 +204,16 @@ namespace BoardingHouseApp.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                // 🔐 KIỂM TRA QUYỀN: Tenant chỉ được sửa hợp đồng của mình
+                if (User.IsInRole("Tenant"))
+                {
+                    var tenantId = GetCurrentTenantId();
+                    if (contract.TenantId != tenantId)
+                    {
+                        TempData["ErrorMessage"] = "Bạn không có quyền chỉnh sửa hợp đồng này.";
+                        return RedirectToAction(nameof(Index));
+                    }
+                }
 
                 // Danh sách người thuê
                 var validTenants = await _context.Tenants
@@ -208,21 +244,28 @@ namespace BoardingHouseApp.Controllers
             }
         }
 
-
         // POST: /Contracts/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ContractsId,IsActive,StartDate,EndDate,TenantId,RoomId,CreatedAt")] Contracts contract)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,IsActive,StartDate,EndDate,TenantId,RoomId,CreatedAt")] Contracts contract)
         {
+            // 🔐 KIỂM TRA QUYỀN: Tenant chỉ được sửa hợp đồng của mình
+            if (User.IsInRole("Tenant"))
+            {
+                var tenantId = GetCurrentTenantId();
+                var existingContract = await _context.Contracts.FindAsync(id);
+                if (existingContract?.TenantId != tenantId)
+                {
+                    TempData["ErrorMessage"] = "Bạn không có quyền chỉnh sửa hợp đồng này.";
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+
             // Kiểm tra ID trong URL có khớp với ID trong Model không
             if (id != contract.Id)
             {
                 TempData["ErrorMessage"] = "ID hợp đồng không khớp.";
                 return RedirectToAction(nameof(Index));
-            }
-            if (contract.Id == 0)
-            {
-                contract.Id = id;
             }
 
             // 1. Loại bỏ các trường tự động quản lý để tránh lỗi validation không cần thiết
@@ -232,15 +275,12 @@ namespace BoardingHouseApp.Controllers
             ModelState.Remove("Payments");
             ModelState.Remove("IsDeleted");
 
-            // Lưu ý: Chúng ta giữ lại "CreatedAt" từ Bind để không bị mất giá trị gốc
-
             if (ModelState.IsValid)
             {
                 try
                 {
                     // 2. Cập nhật trường UpdateAt
                     contract.UpdatedAt = DateTime.Now;
-                    
 
                     // 3. Cập nhật vào DB
                     _context.Update(contract);
@@ -251,7 +291,6 @@ namespace BoardingHouseApp.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    // Xử lý lỗi đồng thời (Concurrency Exception)
                     if (!_context.Contracts.Any(e => e.Id == contract.Id))
                     {
                         TempData["ErrorMessage"] = "Hợp đồng này đã bị xóa bởi người dùng khác.";
@@ -259,7 +298,6 @@ namespace BoardingHouseApp.Controllers
                     }
                     else
                     {
-                        // Lỗi đồng thời khác
                         throw;
                     }
                 }
@@ -273,8 +311,7 @@ namespace BoardingHouseApp.Controllers
                 }
             }
 
-
-            // Danh sách người thuê
+            // Nạp lại dropdowns nếu có lỗi
             var validTenants = await _context.Tenants
                 .AsNoTracking()
                 .Where(t => t.TenantId > 0 && !string.IsNullOrEmpty(t.FullName))
@@ -282,7 +319,6 @@ namespace BoardingHouseApp.Controllers
                 .ToListAsync();
             ViewData["TenantId"] = new SelectList(validTenants, "TenantId", "FullName", contract.TenantId);
 
-            // Danh sách phòng
             var validRooms = await _context.Rooms
                 .AsNoTracking()
                 .Where(r => r.RoomId > 0 && !string.IsNullOrEmpty(r.RoomNumber))
@@ -290,9 +326,8 @@ namespace BoardingHouseApp.Controllers
                 .ToListAsync();
             ViewData["RoomId"] = new SelectList(validRooms, "RoomId", "RoomNumber", contract.RoomId);
 
-            return View(contract); // Trả về View với dữ liệu lỗi
+            return View(contract);
         }
-
 
         // GET: /Contracts/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -313,10 +348,22 @@ namespace BoardingHouseApp.Controllers
                 return NotFound();
             }
 
+            // 🔐 KIỂM TRA QUYỀN: Tenant chỉ được xem hợp đồng của mình
+            if (User.IsInRole("Tenant"))
+            {
+                var tenantId = GetCurrentTenantId();
+                if (contract.TenantId != tenantId)
+                {
+                    TempData["ErrorMessage"] = "Bạn không có quyền xem hợp đồng này.";
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+
             return View(contract);
         }
 
-        // GET: /Contracts/Delete/5 (Hiển thị trang xác nhận)
+        // GET: /Contracts/Delete/5 - CHỈ ADMIN
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -330,7 +377,7 @@ namespace BoardingHouseApp.Controllers
                 var contract = await _context.Contracts
                     .Include(c => c.Tenant)
                     .Include(c => c.Room)
-                    .FirstOrDefaultAsync(m => m.Id == id); // Dùng Id
+                    .FirstOrDefaultAsync(m => m.Id == id);
 
                 if (contract == null)
                 {
@@ -347,10 +394,10 @@ namespace BoardingHouseApp.Controllers
             }
         }
 
-
-        // POST: /Contracts/Delete/5
+        // POST: /Contracts/Delete/5 - CHỈ ADMIN
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             try
@@ -360,7 +407,7 @@ namespace BoardingHouseApp.Controllers
                 if (contract != null)
                 {
                     contract.IsDeleted = true; 
-                    contract.UpdatedAt = DateTime.UtcNow; 
+                    contract.UpdatedAt = DateTime.Now; 
 
                     _context.Update(contract);
                     await _context.SaveChangesAsync();
@@ -378,6 +425,5 @@ namespace BoardingHouseApp.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-
     }
 }

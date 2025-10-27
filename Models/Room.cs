@@ -1,8 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace BoardingHouseApp.Models
 {
+    [Index(nameof(RoomNumber), IsUnique = true)]
     public class Room
     {
         [Key]

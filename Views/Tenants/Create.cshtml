@@ -4,6 +4,20 @@
 }
 <div class="container py-4">
     <h2>Thêm người thuê</h2>
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
 
     <form asp-action="Create" method="post" class="mt-3" id="createForm">
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
@@ -28,7 +42,8 @@
 
         <button type="submit" class="btn btn-primary" id="submitButton">
             <span id="submitText">Lưu</span>
-            <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+            <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status"
+                aria-hidden="true"></span>
             <span id="loadingText" class="d-none">Đang xử lý...</span>
         </button>
         <a asp-action="Index" class="btn btn-secondary ms-2">Hủy</a>
@@ -58,7 +73,7 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('createForm');
             const submitButton = document.getElementById('submitButton');
             const submitText = document.getElementById('submitText');
@@ -66,7 +81,7 @@
             const loadingText = document.getElementById('loadingText');
             const loadingOverlay = document.getElementById('loadingOverlay');
 
-            form.addEventListener('submit', function(e) {
+            form.addEventListener('submit', function (e) {
                 // Hiển thị loading
                 submitButton.disabled = true;
                 submitText.classList.add('d-none');
@@ -76,20 +91,20 @@
 
                 // Đổi text và style của button
                 submitButton.innerHTML = `
-                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    Đang xử lý...
-                `;
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        Đang xử lý...
+                    `;
             });
 
             // Xử lý khi có lỗi validation (form không submit được)
-            form.addEventListener('invalid', function() {
+            form.addEventListener('invalid', function () {
                 // Ẩn loading nếu có lỗi validation
                 submitButton.disabled = false;
                 submitText.classList.remove('d-none');
                 loadingSpinner.classList.add('d-none');
                 loadingText.classList.add('d-none');
                 loadingOverlay.classList.add('d-none');
-                
+
                 // Khôi phục button
                 submitButton.innerHTML = '<span id="submitText">Lưu</span>';
             }, true);

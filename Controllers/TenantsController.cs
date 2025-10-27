@@ -23,6 +23,9 @@ namespace BoardingHouseApp.Controllers
         // GET: /Tenants
         public async Task<IActionResult> Index()
         {
+            TempData["ErrorMessage"] = null;
+            TempData["SuccessMessage"] = null;
+            TempData["WarningMessage"] = null;
             if (User.IsInRole("Admin"))
             {
                 // Admin: xem tất cả tenants
@@ -51,7 +54,6 @@ namespace BoardingHouseApp.Controllers
             return View();
         }
 
-        // POST: /Tenants/Create - CHỈ ADMIN
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
@@ -69,7 +71,14 @@ namespace BoardingHouseApp.Controllers
                         TempData["ErrorMessage"] = "Email này đã được đăng ký.";
                         return View(tenant);
                     }
+                    bool phoneExists = await _context.Tenants
+                        .AnyAsync(t => t.Phone == tenant.Phone);
 
+                    if (phoneExists)
+                    {
+                        TempData["ErrorMessage"] = "Số điện thoại này đã được đăng ký.";
+                        return View(tenant);
+                    }
                     string defaultPassword = GenerateDefaultPassword(tenant.Phone);
                     tenant.hashPassword = HashPassword(defaultPassword);
                     tenant.CreatedAt = DateTime.Now;
@@ -79,20 +88,20 @@ namespace BoardingHouseApp.Controllers
                     await _context.SaveChangesAsync();
 
                     string emailBody = $@"
-                        <h3>Xin chào {tenant.FullName},</h3>
-                        <p>Bạn đã được thêm vào hệ thống quản lý nhà trọ với thông tin đăng nhập sau:</p>
-                        
-                        <div style='background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;'>
-                            <p><strong>Email đăng nhập:</strong> {tenant.Email}</p>
-                            <p><strong>Mật khẩu mặc định:</strong> {defaultPassword}</p>
-                            <p><strong>Số điện thoại:</strong> {tenant.Phone}</p>
-                        </div>
-                        
-                        <p><strong>⚠️ Lưu ý quan trọng:</strong></p>
-                        <ul>
-                            <li>Không chia sẻ thông tin đăng nhập với người khác</li>
-                            <li>Mật khẩu được tạo từ 6 số cuối điện thoại của bạn</li>
-                        </ul>";
+                <h3>Xin chào {tenant.FullName},</h3>
+                <p>Bạn đã được thêm vào hệ thống quản lý nhà trọ với thông tin đăng nhập sau:</p>
+                
+                <div style='background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;'>
+                    <p><strong>Email đăng nhập:</strong> {tenant.Email}</p>
+                    <p><strong>Mật khẩu mặc định:</strong> {defaultPassword}</p>
+                    <p><strong>Số điện thoại:</strong> {tenant.Phone}</p>
+                </div>
+                
+                <p><strong>⚠️ Lưu ý quan trọng:</strong></p>
+                <ul>
+                    <li>Không chia sẻ thông tin đăng nhập với người khác</li>
+                    <li>Mật khẩu được tạo từ 6 số cuối điện thoại của bạn</li>
+                </ul>";
 
                     bool emailSent = await _emailService.SendEmailAsync(
                         tenant.Email,
@@ -100,7 +109,34 @@ namespace BoardingHouseApp.Controllers
                         "Thông tin tài khoản - Boarding House Management",
                         emailBody
                     );
+
+                    if (emailSent)
+                    {
+                        TempData["SuccessMessage"] = "Thêm người thuê thành công và đã gửi email thông báo!";
+                    }
+                    else
+                    {
+                        TempData["WarningMessage"] = $"Thêm người thuê thành công nhưng không gửi được email. Mật khẩu: {defaultPassword}";
+                    }
+
                     return RedirectToAction(nameof(Index));
+                }
+                catch (DbUpdateException ex)
+                {
+                    if (ex.InnerException != null && ex.InnerException.Message.Contains("IX_Tenants_Phone"))
+                    {
+                        TempData["ErrorMessage"] = "Số điện thoại này đã được đăng ký.";
+                    }
+                    else if (ex.InnerException != null && ex.InnerException.Message.Contains("IX_Tenants_Email"))
+                    {
+                        TempData["ErrorMessage"] = "Email này đã được đăng ký.";
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Lỗi database: {ex.Message}");
+                        TempData["ErrorMessage"] = "Có lỗi xảy ra khi thêm người thuê. Vui lòng thử lại.";
+                    }
+                    return View(tenant);
                 }
                 catch (Exception ex)
                 {

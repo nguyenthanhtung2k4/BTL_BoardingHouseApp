@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace BoardingHouseApp.Controllers
 {
@@ -21,42 +22,47 @@ namespace BoardingHouseApp.Controllers
         }
 
         // --- PHƯƠNG THỨC HỖ TRỢ ---
-
-        // Phương thức hỗ trợ nạp Dropdown Hợp đồng
-        private void PopulateContractsDropdown(int? selectedContractId = null)
+        private int GetCurrentTenantId()
         {
-            // Lấy các Hợp đồng đang hoạt động, hiển thị RoomNumber và Tenant Name
-            var contractsList = _context.Contracts
-                .Include(c => c.Room)
-                .Include(c => c.Tenant)
-                .Where(c => c.IsActive && !c.IsDeleted)
-                .Select(c => new
-                {
-                    c.Id,
-                    DisplayText = $"HD #{c.Id} - Phòng: {c.Room!.RoomNumber} - Người thuê: {c.Tenant!.FullName}"
-                })
-                .OrderBy(c => c.Id);
-
-            ViewData["ContractId"] = new SelectList(contractsList, "Id", "DisplayText", selectedContractId);
+            var tenantIdClaim = User.FindFirst("TenantId");
+            if (tenantIdClaim != null && int.TryParse(tenantIdClaim.Value, out int tenantId))
+            {
+                return tenantId;
+            }
+            return 0;
         }
 
-        // FIX LOGIC: Chuẩn hóa dữ liệu Status và PaymentDate
+        // Phương thức hỗ trợ nạp Dropdown Hợp đồng - CHỈ ADMIN
+        private void PopulateContractsDropdown(int? selectedContractId = null)
+        {
+            if (User.IsInRole("Admin"))
+            {
+                var contractsList = _context.Contracts
+                    .Include(c => c.Room)
+                    .Include(c => c.Tenant)
+                    .Where(c => c.IsActive && !c.IsDeleted)
+                    .Select(c => new
+                    {
+                        c.Id,
+                        DisplayText = $"HD #{c.Id} - Phòng: {c.Room!.RoomNumber} - Người thuê: {c.Tenant!.FullName}"
+                    })
+                    .OrderBy(c => c.Id);
+
+                ViewData["ContractId"] = new SelectList(contractsList, "Id", "DisplayText", selectedContractId);
+            }
+        }
+
         private void NormalizePaymentStatus(Payment payment)
         {
-            // Nếu trạng thái là Đã thanh toán (Status = 1)
             if (payment.Status == 1)
             {
-                // Bắt buộc phải có Ngày Thanh Toán Thực Tế
                 if (!payment.PaymentDate.HasValue)
                 {
-                    // Nếu Status = 1 nhưng không có ngày, chuyển về Status = 0
                     payment.Status = 0;
                 }
             }
-            // Nếu trạng thái là Chưa thanh toán (Status = 0: Hóa đơn) HOẶC Quá hạn (Status = 2)
             else if (payment.Status == 0 || payment.Status == 2)
             {
-                // Thanh toán chưa thực hiện, Ngày Thanh Toán Thực Tế phải là NULL
                 payment.PaymentDate = null;
             }
         }
@@ -67,14 +73,24 @@ namespace BoardingHouseApp.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var pay = _context.Payments
+            IQueryable<Payment> paymentsQuery = _context.Payments
                 .Include(p => p.Contract)
                     .ThenInclude(c => c!.Room)
                 .Include(p => p.Contract)
-                    .ThenInclude(c => c!.Tenant)
-                .OrderByDescending(p => p.CreatedAt);
+                    .ThenInclude(c => c!.Tenant);
 
-            return View(await pay.ToListAsync());
+            // PHÂN QUYỀN: Tenant chỉ xem payments của mình
+            if (User.IsInRole("Tenant"))
+            {
+                var tenantId = GetCurrentTenantId();
+                paymentsQuery = paymentsQuery.Where(p => p.Contract!.TenantId == tenantId);
+            }
+
+            var payments = await paymentsQuery
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+
+            return View(payments);
         }
 
         // GET: Payments/Details/5
@@ -91,24 +107,35 @@ namespace BoardingHouseApp.Controllers
 
             if (payment == null) return NotFound();
 
+            // PHÂN QUYỀN: Tenant chỉ xem payments của mình
+            if (User.IsInRole("Tenant"))
+            {
+                var tenantId = GetCurrentTenantId();
+                if (payment.Contract?.TenantId != tenantId)
+                {
+                    TempData["ErrorMessage"] = "Bạn không có quyền xem hóa đơn này.";
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+
             return View(payment);
         }
 
-        // GET: Payments/Create
+        // GET: Payments/Create - CHỈ ADMIN
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
             PopulateContractsDropdown();
             return View();
         }
 
-        // POST: Payments/Create
+        // POST: Payments/Create - CHỈ ADMIN
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([Bind("Description,PaymentDate,PaymentMethod,Amount,ContractId,Status")] Payment payment)
         {
-            // Áp dụng logic chuẩn hóa (FIX LỖI)
             NormalizePaymentStatus(payment);
-
             payment.CreatedAt = DateTime.Now;
             payment.UpdatedAt = DateTime.Now;
 
@@ -126,7 +153,8 @@ namespace BoardingHouseApp.Controllers
             return View(payment);
         }
 
-        // GET: Payments/Edit/5
+        // GET: Payments/Edit/5 - CHỈ ADMIN
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -138,15 +166,15 @@ namespace BoardingHouseApp.Controllers
             return View(payment);
         }
 
-        // POST: Payments/Edit/5
+        // POST: Payments/Edit/5 - CHỈ ADMIN
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Description,PaymentDate,PaymentMethod,Amount,ContractId,Status,CreatedAt")] Payment payment)
         {
             if (id != payment.Id) return NotFound();
 
             NormalizePaymentStatus(payment);
-
             payment.UpdatedAt = DateTime.Now;
 
             ModelState.Remove("Contract");
@@ -177,7 +205,8 @@ namespace BoardingHouseApp.Controllers
             return View(payment);
         }
 
-        // GET: Payments/Delete/5
+        // GET: Payments/Delete/5 - CHỈ ADMIN
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
@@ -194,9 +223,10 @@ namespace BoardingHouseApp.Controllers
             return View(payment);
         }
 
-        // POST: Payments/Delete/5
+        // POST: Payments/Delete/5 - CHỈ ADMIN
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var payment = await _context.Payments.FindAsync(id);
