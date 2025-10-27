@@ -20,7 +20,7 @@ namespace BoardingHouseApp.Controllers
         public async Task<IActionResult> Index()
         {
             var rooms = await _context.Rooms
-                .OrderByDescending(r => r.CreatedAt)
+                .Where(r => !r.IsDeleted) // Chỉ lấy phòng chưa bị xoá
                 .ToListAsync();
             return View(rooms);
         }
@@ -40,59 +40,93 @@ namespace BoardingHouseApp.Controllers
         // POST: /Rooms/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("RoomNumber,Price")] Room room)
+        public async Task<IActionResult> Create([Bind("RoomNumber,Price,Status")] Room room)
         {
+            // Kiểm tra số phòng đã tồn tại chưa
+            bool roomNumberExists = await _context.Rooms.AnyAsync(r => r.RoomNumber == room.RoomNumber);
+            if (roomNumberExists)
+            {
+                TempData["ErrorMessage"] = "Số phòng này đã tồn tại.";
+                return View(room);
+            }
+
             if (ModelState.IsValid)
             {
                 room.CreatedAt = DateTime.Now;
                 room.UpdatedAt = DateTime.Now;
                 _context.Add(room);
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Thêm phòng thành công!";
                 return RedirectToAction(nameof(Index));
             }
+
+            TempData["ErrorMessage"] = "Có lỗi xảy ra khi thêm phòng. Vui lòng kiểm tra lại thông tin.";
             return View(room);
         }
 
         // GET: /Rooms/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        // GET: /Rooms/Edit/5
+        public async Task<IActionResult> Edit(int id)
         {
-            if (id == null) return NotFound();
             var room = await _context.Rooms.FindAsync(id);
-            if (room == null) return NotFound();
+            if (room == null)
+            {
+                return NotFound();
+            }
             return View(room);
         }
 
         // POST: /Rooms/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("RoomId,RoomNumber,Price")] Room room)
+        public async Task<IActionResult> Edit(int id, [Bind("RoomId,RoomNumber,Price,Status")] Room room)
         {
-            if (id != room.RoomId) return NotFound();
+            if (id != room.RoomId)
+            {
+                return NotFound();
+            }
 
             if (ModelState.IsValid)
             {
                 try
                 {
+                    // Lấy room hiện tại từ database
                     var existingRoom = await _context.Rooms.FindAsync(id);
-                    if (existingRoom == null) return NotFound();
+                    if (existingRoom == null)
+                    {
+                        return NotFound();
+                    }
 
+                    // Cập nhật các thuộc tính
                     existingRoom.RoomNumber = room.RoomNumber;
                     existingRoom.Price = room.Price;
+                    existingRoom.Status = room.Status;
                     existingRoom.UpdatedAt = DateTime.Now;
 
+                    // Cập nhật trong context
                     _context.Update(existingRoom);
                     await _context.SaveChangesAsync();
+
+                    return RedirectToAction(nameof(Index));
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!_context.Rooms.Any(e => e.RoomId == room.RoomId))
+                    if (!RoomExists(room.RoomId))
+                    {
                         return NotFound();
+                    }
                     else
+                    {
                         throw;
+                    }
                 }
-                return RedirectToAction(nameof(Index));
             }
             return View(room);
+        }
+
+        private bool RoomExists(int id)
+        {
+            return _context.Rooms.Any(e => e.RoomId == id);
         }
 
         // GET: /Rooms/Delete/5
@@ -110,11 +144,19 @@ namespace BoardingHouseApp.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var room = await _context.Rooms.FindAsync(id);
-            if (room != null)
+            if (room == null)
             {
-                _context.Rooms.Remove(room);
-                await _context.SaveChangesAsync();
+                return NotFound();
             }
+
+            // Thay vì xoá, đánh dấu là đã xoá
+            room.IsDeleted = true;
+            room.UpdatedAt = DateTime.Now;
+
+            _context.Rooms.Update(room);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Đã xoá phòng thành công!";
             return RedirectToAction(nameof(Index));
         }
     }

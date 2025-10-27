@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BoardingHouseApp.Models
 {
@@ -13,8 +14,25 @@ namespace BoardingHouseApp.Models
         [Required]
         public double Price { get; set; }
 
+        [Required]
+        public RoomStatus Status { get; set; } = RoomStatus.Empty;
+
         public DateTime CreatedAt { get; set; }
 
         public DateTime UpdatedAt { get; set; }
+
+        public bool IsDeleted { get; set; } = false; // Thêm giá trị mặc định
+    }
+
+    public enum RoomStatus
+    {
+        [Display(Name = "Trống")]
+        Empty = 0,
+        
+        [Display(Name = "Đang thuê")]
+        Occupied = 1,
+        
+        [Display(Name = "Bảo trì")]
+        Maintenance = 2
     }
 }
